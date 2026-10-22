@@ -9,6 +9,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  actions: write
 
 jobs:
   sync:
@@ -23,3 +24,14 @@ jobs:
           base: main              # branch in THIS repo to update
           head: main              # branch in the upstream repo to pull from
           merge_method: merge
+
+      - name: Disable any unrecognized workflows
+        env:
+          GH_TOKEN: ${{ secrets.SYNC_PAT || secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow list --json name,path,state \
+            | jq -r '.[] | select(.path | test("sync-upstream") | not) | select(.state == "active") | .name' \
+            | while IFS= read -r name; do
+                echo "Disabling: $name"
+                gh workflow disable "$name"
+              done
