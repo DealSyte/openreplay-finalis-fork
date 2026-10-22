@@ -23,7 +23,7 @@ elif [[ $ARCH = 'arm64' ]]; then
 fi
 
 # Possible values: amd64, arm64
-arch="${ARCH:-"amd64"}"
+arch="${ARCH:-"linux/amd64"}"
 check_prereq() {
     which docker || {
         echo "Docker not installed, please install docker."
