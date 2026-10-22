@@ -1,0 +1,25 @@
+name: Sync upstream
+
+on:
+  schedule:
+    # Runs daily at 06:00 UTC
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: tgymnich/fork-sync@v2
+        with:
+          # Fine-grained PAT with Contents (write) + Pull requests (write) on this repo.
+          # If main is unprotected, GITHUB_TOKEN is sufficient.
+          token: ${{ secrets.SYNC_PAT || secrets.GITHUB_TOKEN }}
+          owner: openreplay       # upstream org/user
+          base: main              # branch in THIS repo to update
+          head: main              # branch in the upstream repo to pull from
+          merge_method: merge
