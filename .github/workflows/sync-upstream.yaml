@@ -21,7 +21,7 @@ jobs:
           # If main is unprotected, GITHUB_TOKEN is sufficient.
           token: ${{ secrets.SYNC_PAT || secrets.GITHUB_TOKEN }}
           owner: openreplay       # upstream org/user
-          upstream: openreplay    # upstream repo name (openreplay/openreplay)
+          repo: openreplay        # upstream repo name (openreplay/openreplay)
           base: main              # branch in THIS repo to update
           head: main              # branch in the upstream repo to pull from
           merge_method: merge
