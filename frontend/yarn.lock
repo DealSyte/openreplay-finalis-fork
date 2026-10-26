@@ -11274,23 +11274,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"postcss-selector-parser@npm:^7.1.1":
-  version: 7.1.4
-  resolution: "postcss-selector-parser@npm:7.1.4"
+"postcss-selector-parser@npm:^7.1.1, postcss-selector-parser@npm:^7.1.5":
+  version: 7.1.7
+  resolution: "postcss-selector-parser@npm:7.1.7"
   dependencies:
     cssesc: "npm:^3.0.0"
     util-deprecate: "npm:^1.0.2"
-  checksum: 10c1/c3f10c44dd6a882be1b2443b5e33fe35d27c0d2e3065f84d283b8e7e1aab6cb7e73694ed868c4010e43a6615bf1cad4217b49e96857dd9126da8b5cf38eff2e8
-  languageName: node
-  linkType: hard
-
-"postcss-selector-parser@npm:^7.1.5":
-  version: 7.1.6
-  resolution: "postcss-selector-parser@npm:7.1.6"
-  dependencies:
-    cssesc: "npm:^3.0.0"
-    util-deprecate: "npm:^1.0.2"
-  checksum: 10c1/fc55850af4f06eea3424b9d85fa64de401eb4391e661f345b41b96fd9d2cd560238814e71d4aebb8fd6114ec9d36a9db99bc0c2c98a149fb567c79f1301fc7e9
+  checksum: 10c1/f732cacc9b93e97c710f361b326d6133c199105f875e4e9e68e5bd01c6b49be8dd5bef10b864bb0d3aabd8cc9095c84cc57e8c9a23e42ef503cf1bf0c3a97d86
   languageName: node
   linkType: hard
 
