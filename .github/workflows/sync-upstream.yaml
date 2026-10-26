@@ -8,23 +8,18 @@ on:
 
 permissions:
   contents: write
-  pull-requests: write
   actions: write
 
 jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - uses: tgymnich/fork-sync@v2
-        with:
-          # Fine-grained PAT with Contents (write) + Pull requests (write) on this repo.
-          # If main is unprotected, GITHUB_TOKEN is sufficient.
-          token: ${{ secrets.SYNC_PAT || secrets.GITHUB_TOKEN }}
-          owner: openreplay       # upstream org/user
-          repo: openreplay        # upstream repo name (openreplay/openreplay)
-          base: main              # branch in THIS repo to update
-          head: main              # branch in the upstream repo to pull from
-          merge_method: merge
+      - name: Sync fork with upstream
+        env:
+          GH_TOKEN: ${{ secrets.SYNC_PAT || secrets.GITHUB_TOKEN }}
+        run: |
+          gh api repos/${{ github.repository }}/merge-upstream \
+            -f branch=main
 
       - name: Disable any unrecognized workflows
         env:
