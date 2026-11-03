@@ -22,7 +22,7 @@
   "type": "module",
   "dependencies": {
     "@modelcontextprotocol/ext-apps": "^1.7.5",
-    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@modelcontextprotocol/sdk": "^1.32.0",
     "echarts": "^6.1.0",
     "fflate": "^0.8.3",
     "fzstd": "^0.1.1",
