@@ -14,6 +14,7 @@ from starlette.responses import StreamingResponse
 
 from chalicelib.utils import helper
 from chalicelib.utils import pg_client, ch_client
+from chalicelib.utils import env_secrets
 from chalicelib.utils.log import sanitize
 from crons import core_crons, core_dynamic_crons
 from routers import core, core_dynamic
@@ -34,6 +35,7 @@ class ORPYAsyncConnection(AsyncConnection):
 async def lifespan(app: FastAPI):
     # Startup
     logging.info(">>>>> starting up <<<<<")
+    env_secrets.check()
     ap_logger = logging.getLogger("apscheduler")
     ap_logger.setLevel(loglevel)
 

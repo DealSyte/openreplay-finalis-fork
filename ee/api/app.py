@@ -19,6 +19,7 @@ from chalicelib.core import traces
 from chalicelib.utils import events_queue
 from chalicelib.utils import helper
 from chalicelib.utils import pg_client, ch_client
+from chalicelib.utils import env_secrets
 from chalicelib.utils.log import sanitize
 from crons import core_crons, ee_crons, core_dynamic_crons
 from routers import core, core_dynamic
@@ -46,6 +47,7 @@ class ORPYAsyncConnection(AsyncConnection):
 async def lifespan(app: FastAPI):
     # Startup
     logging.info(">>>>> starting up <<<<<")
+    env_secrets.check()
     ap_logger = logging.getLogger("apscheduler")
     ap_logger.setLevel(loglevel)
 
@@ -190,13 +192,8 @@ app.include_router(mcp.public_app)
 
 if config("ENABLE_SSO", cast=bool, default=True):
     app.include_router(saml.public_app)
-    app.include_router(saml.app)
-    app.include_router(saml.app_apikey)
-    app.include_router(scim.public_app)
-    app.include_router(scim.app)
-    app.include_router(scim.app_apikey)
-
     if SAML2_helper.is_scim_configured():
         logger.info("SCIM configured, mounting endpoints...")
+        app.include_router(scim.public_app)
         SCIM_MOUNT_PATH = "/sso/scim/v2"
         app.mount(SCIM_MOUNT_PATH, WSGIMiddleware(PrefixMiddleware(scim.scim_app, SCIM_MOUNT_PATH)))
