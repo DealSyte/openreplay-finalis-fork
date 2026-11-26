@@ -3,6 +3,8 @@ const uaParser = require('ua-parser-js');
 const {geoip} = require('./geoIP');
 const {extractPeerId} = require('./helper');
 const {logger} = require('./logger');
+const sessionToken = require('./sessionToken');
+const {IncreaseSessionAuth} = require('./metrics');
 
 const IDENTITIES = {agent: 'agent', session: 'session'};
 const EVENTS_DEFINITION = {
@@ -18,6 +20,26 @@ const EVENTS_DEFINITION = {
         UPDATE_SESSION: "SERVER_UPDATE_SESSION"
     }
 };
+
+const CALL_EVENTS = new Set([
+    '_agent_name', 'call_end', 'videofeed',
+    'webrtc_call_offer', 'webrtc_call_answer', 'webrtc_call_ice_candidate',
+    'request_control', 'release_control',
+    'click', 'scroll', 'move', 'input', 'focus', 'select', 'drag', 'startDrag', 'stopDrag',
+    'startAnnotation', 'moveAnnotation', 'stopAnnotation',
+    'WEBRTC_AGENT_CALL',
+    's_call_started', 's_call_ended', 's_control_started', 's_control_ended', 's_recording_started', 's_recording_ended',
+]);
+
+// Tokens issued before the claim existed carry no canCall and keep working.
+function agentCanCall(socket) {
+    return !(socket.decoded && socket.decoded.canCall === false);
+}
+
+function agentMaySend(socket, eventName) {
+    return agentCanCall(socket) || !CALL_EVENTS.has(eventName);
+}
+
 EVENTS_DEFINITION.emit = {
   NEW_AGENT: "NEW_AGENT",
   NO_AGENTS: "NO_AGENT",
@@ -63,8 +85,18 @@ const extractSessionInfo = function (socket) {
     if (socket.handshake.query.sessionInfo !== undefined) {
         logger.debug(`received headers: ${socket.handshake.headers}`);
 
-        socket.handshake.query.sessionInfo = JSON.parse(socket.handshake.query.sessionInfo);
-        socket.handshake.query.sessionInfo = {...BASE_sessionInfo, ...socket.handshake.query.sessionInfo};
+        let sessionInfo;
+        try {
+            sessionInfo = JSON.parse(socket.handshake.query.sessionInfo);
+        } catch (e) {
+            logger.debug(`invalid sessionInfo, peerId: ${socket.handshake.query.peerId}, err: ${e.message}`);
+            return false;
+        }
+        if (typeof sessionInfo !== 'object' || sessionInfo === null) {
+            logger.debug(`sessionInfo is not an object, peerId: ${socket.handshake.query.peerId}`);
+            return false;
+        }
+        socket.handshake.query.sessionInfo = {...BASE_sessionInfo, ...sessionInfo};
 
         let ua = uaParser(socket.handshake.headers['user-agent']);
         socket.handshake.query.sessionInfo.userOs = ua.os.name || null;
@@ -89,6 +121,7 @@ const extractSessionInfo = function (socket) {
             }
         }
     }
+    return true;
 }
 
 function socketConnexionTimeout(io) {
@@ -123,10 +156,32 @@ function generateAccessToken(payload) {
 }
 
 const JWT_TOKEN_PREFIX = "Bearer ";
+const TOKEN_SECRET = process.env.TOKEN_SECRET;
+if (!TOKEN_SECRET) {
+    throw new Error('TOKEN_SECRET is required to verify session tokens');
+}
+
+function checkSession(socket, next) {
+    const token = socket.handshake.auth && socket.handshake.auth.token;
+    if (!token) {
+        logger.debug(`session without token, peerId: ${socket.handshake.query.peerId}`);
+        IncreaseSessionAuth('missing');
+        return next(new Error('Authentication error'));
+    }
+    try {
+        socket.decoded = sessionToken.parse(token, TOKEN_SECRET);
+    } catch (e) {
+        logger.debug(`invalid session token, peerId: ${socket.handshake.query.peerId}, err: ${e.message}`);
+        IncreaseSessionAuth('rejected');
+        return next(new Error('Authentication error'));
+    }
+    IncreaseSessionAuth('token');
+    return next();
+}
 
 function check(socket, next) {
     if (socket.handshake.query.identity === IDENTITIES.session) {
-        return next();
+        return checkSession(socket, next);
     }
     if (socket.handshake.query.peerId && socket.handshake.auth && socket.handshake.auth.token) {
         let token = socket.handshake.auth.token;
@@ -164,5 +219,7 @@ module.exports = {
     IDENTITIES,
     socketConnexionTimeout,
     errorHandler,
+    agentCanCall,
+    agentMaySend,
     authorizer: {generateAccessToken, check}
 };

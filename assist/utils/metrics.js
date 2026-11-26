@@ -1,4 +1,4 @@
-const client = require('prom-client')
+const client = require('@prometheus-io/client')
 
 // Create a Registry which registers the metrics
 const register = new client.Registry()
@@ -52,11 +52,22 @@ const IncreaseTotalRooms = function () {
     websocketTotalRooms.inc();
 }
 
+const websocketSessionAuth = new client.Counter({
+    name: 'ws_session_auth_total',
+    help: 'A counter displaying session connections by auth outcome',
+    labelNames: ['mode'], // token, missing, rejected
+});
+
+const IncreaseSessionAuth = function (mode) {
+    websocketSessionAuth.inc({mode: mode});
+}
+
 
 register.registerMetric(httpRequestDuration);
 register.registerMetric(httpTotalRequests);
 register.registerMetric(websocketTotalConnections);
 register.registerMetric(websocketTotalRooms);
+register.registerMetric(websocketSessionAuth);
 
 module.exports = {
     register,
@@ -64,4 +75,5 @@ module.exports = {
     IncreaseTotalRequests,
     IncreaseTotalWSConnections,
     IncreaseTotalRooms,
+    IncreaseSessionAuth,
 }
